@@ -1696,8 +1696,12 @@ final class Base extends Prefab implements ArrayAccess {
 	*	@return object
 	*	@param $file string
 	*	@param $allow bool
+        *       @param $cache_ttl integer
 	**/
-	function config($file,$allow=FALSE) {
+	function config($file,$allow=FALSE, $cache_ttl=0) {
+            $cache = Cache::instance();
+            if (!$cache_ttl || !$cache->exists($hash=$this->hash($file),$matches)) {
+
 		preg_match_all(
 			'/(?<=^|\n)(?:'.
 				'\[(?<section>.+?)\]|'.
@@ -1706,7 +1710,11 @@ final class Base extends Prefab implements ArrayAccess {
 			')(?=\r?\n|$)/',
 			$this->read($file),
 			$matches,PREG_SET_ORDER);
+            }
 		if ($matches) {
+                    if ($cache_ttl) {
+                        $cache->set($hash, $matches, $cache_ttl);
+                    }
 			$sec='globals';
 			foreach ($matches as $match) {
 				if ($match['section']) {
